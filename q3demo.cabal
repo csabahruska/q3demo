@@ -1,0 +1,29 @@
+Name:          Q3Demo
+Version:       0.0.1
+Cabal-Version: >= 1.2
+Synopsis:      First Person Shooter Demo
+Category:      Graphics, Game
+Description:   First Person Shooter Demo
+Author:        Csaba Hruska
+Maintainer:    csaba (dot) hruska (at) gmail (dot) com
+Copyright:     (c) 2011, Csaba Hruska
+License:       BSD3
+License-File:  LICENSE
+Stability:     experimental
+Build-Type:    Simple
+
+Extra-Source-Files:
+    BSPLoader.hs
+    MD3Loader.hs
+    Material.hs
+    Q3Patch.hs
+    ShaderParser.hs
+
+Executable q3demo
+  HS-Source-Dirs: .
+  Main-IS:        Main.hs
+  Build-Depends:  base >= 4 && < 5, containers,
+                  binary, bytestring, bytestring-trie, data-binary-ieee754, vect, vector,
+                  OpenGLRaw, SDL, SDL-mixer, bitmap, stb-image >= 0.2
+
+  GHC-Options:    -O2 -Wall -fforce-recomp -fno-warn-unused-do-bind -fno-warn-name-shadowing

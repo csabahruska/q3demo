@@ -1,4 +1,4 @@
-module Items where
+module Q3Demo.Data.Items where
 
 data Tag
     = TG_NONE

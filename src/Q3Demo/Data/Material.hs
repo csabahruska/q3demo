@@ -1,4 +1,4 @@
-module Material where
+module Q3Demo.Data.Material where
 
 import Data.Vect
 import qualified Data.ByteString.Char8 as SB

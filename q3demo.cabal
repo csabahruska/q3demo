@@ -13,14 +13,15 @@ Stability:     experimental
 Build-Type:    Simple
 
 Extra-Source-Files:
-    BSPLoader.hs
-    MD3Loader.hs
-    Material.hs
-    Q3Patch.hs
-    ShaderParser.hs
+    Q3Demo/Data/Items.hs
+    Q3Demo/Data/Material.hs
+    Q3Demo/Graphics/Q3Patch.hs
+    Q3Demo/Loader/BSP.hs
+    Q3Demo/Loader/MD3.hs
+    Q3Demo/Loader/ShaderParser.hs
 
 Executable q3demo
-  HS-Source-Dirs: .
+  HS-Source-Dirs: src
   Main-IS:        Main.hs
   Build-Depends:  base >= 4 && < 5, containers,
                   binary, bytestring, bytestring-trie, data-binary-ieee754, vect, vector,

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ShaderParser where
+module Q3Demo.Loader.ShaderParser where
 
 import Control.Applicative hiding (many)
 import Data.Attoparsec.Char8
@@ -12,7 +12,7 @@ import Data.Vect
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Trie as T
 
-import Material
+import Q3Demo.Data.Material
 
 -- utility parsers
 shaderName :: Parser ByteString

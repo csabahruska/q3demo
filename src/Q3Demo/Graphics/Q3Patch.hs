@@ -1,12 +1,15 @@
 -- http://graphics.cs.brown.edu/games/quake/quake3.html#RenderPatch
 
+module Q3Demo.Graphics.Q3Patch where
+
 import Control.Monad
 import Data.Vector (Vector,(!))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Vect.Float hiding (Vector)
 import Data.Vect.Float.Instances
-import BSPLoader
+
+import Q3Demo.Loader.BSP
 
 tessellate :: Vector DrawVertex -> Int -> IO ((Vector DrawVertex),[Vector Int])
 tessellate controls level = do

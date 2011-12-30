@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MD3Loader where
+module Q3Demo.Loader.MD3 where
 
 import Control.Applicative
 import Control.Monad

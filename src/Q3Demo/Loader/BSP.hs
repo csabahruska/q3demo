@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module BSPLoader where
+module Q3Demo.Loader.BSP where
 
 import Control.Applicative
 import Control.Monad

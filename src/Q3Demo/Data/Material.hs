@@ -116,6 +116,11 @@ data StageTexture
     | ST_Lightmap
     | ST_WhiteImage
 
+data AlphaFunction
+    = A_Gt0
+    | A_Lt128
+    | A_Ge128
+
 data DepthFunction
     = D_Equal
     | D_Lequal
@@ -143,7 +148,7 @@ data StageAttrs
     , saTexture     :: StageTexture
     , saDepthWrite  :: Bool
     , saDepthFunc   :: DepthFunction
-    , saAlphaFunc   :: ()
+    , saAlphaFunc   :: Maybe AlphaFunction
     }
 
 defaultStageAttrs :: StageAttrs
@@ -156,15 +161,13 @@ defaultStageAttrs = StageAttrs
     , saTexture     = ST_WhiteImage
     , saDepthWrite  = False
     , saDepthFunc   = D_Lequal
-    , saAlphaFunc   = ()
+    , saAlphaFunc   = Nothing
     }
 
+fixAttribOrder :: CommonAttrs -> CommonAttrs
 fixAttribOrder ca = ca
     { caDeformVertexes = reverse $ caDeformVertexes ca
     , caStages = take 1 $ reverse $ map fixStage $ caStages ca
     }
   where
-    fixStage sa = sa
-        { saTCMod = reverse $ saTCMod sa
-        }
-
+    fixStage sa = sa {saTCMod = reverse $ saTCMod sa}

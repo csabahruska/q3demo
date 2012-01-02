@@ -4,7 +4,6 @@ module Q3Demo.Loader.ShaderParser where
 
 import Control.Applicative hiding (many)
 import Data.Attoparsec.Char8
-import Data.Attoparsec.Combinator
 import Data.ByteString.Char8 (ByteString)
 import Data.Char (toLower)
 import Data.List (foldl')
@@ -15,40 +14,48 @@ import qualified Data.Trie as T
 import Q3Demo.Data.Material
 
 -- utility parsers
-shaderName :: Parser ByteString
-shaderName = word
+skipSpace' :: Parser ()
+skipSpace' = skipWhile (\c -> elem c " \t")
 
 skip :: Parser ()
 skip = skipSpace <* many (comment <* skipSpace)
 
-skipRest = skipWhile (\c -> c /= '\n' && c /= '\r')
+skipRest :: Parser ()
+skipRest = skipWhile (\c -> notElem c "\n\r{}") <* endOfLine
 
+comment :: Parser ByteString
 comment = (stringCI "//" <* skipWhile (\c -> c /= '\n' && c /= '\r')) <|> (string "/*" <* manyTill anyChar (try (string "*/")))
 
 word :: Parser ByteString
-word = skip *> takeTill isSpace
+word = skipSpace' *> takeTill isSpace
+
+word' :: Parser ByteString
+word' = skip *> word
 
 kw :: ByteString -> Parser ()
 kw s = ((\w -> if B.map toLower w == s then return () else fail "") =<< word) <?> B.unpack s
+
+kw' :: ByteString -> Parser ()
+kw' s = skip *> kw s
 
 val :: a -> ByteString -> Parser a
 val v w = const v <$> kw w
 
 float :: Parser Float
-float = (\_ c a -> c * read a) <$> skip <*> option 1 ((const 1 <$> char '+') <|> (const (-1) <$> char '-')) <*>
+float = (\_ c a -> c * read a) <$> skipSpace' <*> option 1 ((const 1 <$> char '+') <|> (const (-1) <$> char '-')) <*>
     ( ((\a _ b -> a ++ b) <$> many1 digit <*> char '.' <*> many1 digit) <|>
       ((\_ a -> "0." ++ a) <$> char '.' <*> many1 digit) <|>
       (many1 digit) )
     
 int :: Parser Int
-int = skip *> decimal
+int = skipSpace' *> decimal
 
 -- q3 entity description parser
 entities :: Parser [T.Trie ByteString]
 entities = skipSpace *> many entity <* skipSpace
 
 entity :: Parser (T.Trie ByteString)
-entity = T.fromList <$> (kw "{" *> many ((,) <$> str <*> str) <* kw "}")
+entity = T.fromList <$> (kw' "{" *> many ((,) <$> str <*> str) <* kw' "}")
 
 str :: Parser ByteString
 str = skipSpace *> string "\"" *> takeWhile1 (\c -> c /= '"') <* char '"'
@@ -59,10 +66,10 @@ shaders :: Parser [(ByteString,CommonAttrs)]
 shaders = skip *> many shader <* skip
 
 shader :: Parser (ByteString,CommonAttrs)
-shader = (\n _ l _ -> (n,fixAttribOrder $ foldl' (\s f -> f s) defaultCommonAttrs l)) <$> word <*> kw "{" <*> many shaderAttrs <*> kw "}"
+shader = (\n _ l _ -> (n,fixAttribOrder $ foldl' (\s f -> f s) defaultCommonAttrs l)) <$> word' <*> kw' "{" <*> many shaderAttrs <*> kw' "}"
 
 shaderAttrs :: Parser (CommonAttrs -> CommonAttrs)
-shaderAttrs = general <|> q3map <|> editor <|> stage
+shaderAttrs = option id (choice [general, q3map, stage]) <* skipRest
 
 {-
 general =
@@ -98,19 +105,14 @@ stageAttrs =
 
 pass _ a = a
 
-general = cull      <|> deformVertexes <|> entityMergable <|> fogParms <|> fogonly  <|>
-          nomipmaps <|> nopicmip       <|> polygonOffset  <|> portal   <|> skyParms <|> sort
+general = choice [cull, deformVertexes, entityMergable, fogParms, fogonly, nomipmaps, nopicmip, polygonOffset, portal, skyParms, sort]
 
-q3map = q3MapSun <|> surfaceParm <|> light <|> lightning <|> cloudparams <|> sky <|> foggen <|>
-        tessSize <|> (pass <$> (skip *> stringCI "q3map_" *> skipWhile (\c -> c /= '\n' && c /= '\r')))
+q3map = choice [q3MapSun, surfaceParm, light, lightning, cloudparams, sky, foggen, tessSize]
 
-editor = pass <$> (skip *> stringCI "qer_" *> skipWhile (\c -> c /= '\n' && c /= '\r'))
-
-stage = (\_ fl _ ca -> ca {caStages = (foldl' (\s f -> f s) defaultStageAttrs fl):caStages ca}) <$> kw "{" <*> many stageAttrs <*> kw "}"
+stage = (\_ fl _ ca -> ca {caStages = (foldl' (\s f -> f s) defaultStageAttrs fl):caStages ca}) <$> kw' "{" <*> many stageAttrs <*> kw' "}"
 
 stageAttrs :: Parser (StageAttrs -> StageAttrs)
-stageAttrs = alphaFunc  <|> alphaGen <|> animMap <|> blendFunc <|> clampMap  <|> depthFunc <|> 
-             depthWrite <|> detail   <|> mapP    <|> rgbGen    <|> tcGen     <|> tcMod
+stageAttrs = option id (choice [alphaFunc, alphaGen, animMap, blendFunc, clampMap, depthFunc, depthWrite, detail, mapP, rgbGen, tcGen, tcMod]) <* skipRest
 
 -- utility
 waveType = val WT_Sin "sin" <|>
@@ -162,7 +164,7 @@ deformVertexes = (\v ca -> ca {caDeformVertexes = v:caDeformVertexes ca}) <$ kw 
   where
     v3 = Vec3 <$> float <*> float <*> float
 
-fogParms = pass <$> kw "fogparms" <* option () (kw "(") <* float <* float <* float <* option () (kw ")") <* float <* skipRest
+fogParms = pass <$> kw "fogparms" <* kw "(" <* float <* float <* float <* kw ")" <* float
 nopicmip = pass <$> kw "nopicmip"
 nomipmaps = (\_ ca -> ca {caNoMipMaps = True}) <$> kw "nomipmaps"
 entityMergable = pass <$> kw "entitymergable"
@@ -262,12 +264,12 @@ tcGen = (\_ v sa -> sa {saTCGen = v}) <$> kw "tcgen" <*> (
 
 tcMod = (\_ v sa -> sa {saTCMod = v:saTCMod sa}) <$> kw "tcmod" <*> (
     val TM_EntityTranslate "entitytranslate" <|>
-    TM_Rotate <$ kw "rotate" <*> float <* skipRest <|>
-    TM_Scroll <$ kw "scroll" <*> float <*> float <* skipRest <|>
-    TM_Scale <$ kw "scale" <*> float <*> float <* skipRest <|>
+    TM_Rotate <$ kw "rotate" <*> float <|>
+    TM_Scroll <$ kw "scroll" <*> float <*> float <|>
+    TM_Scale <$ kw "scale" <*> float <*> float <|>
     TM_Stretch <$ kw "stretch" <*> wave <|>
     TM_Transform <$ kw "transform" <*> float <*> float <*> float <*> float <*> float <*> float <|>
-    TM_Turb <$ kw "turb" <* option () (kw "sin") <*> float <*> float <*> float <*> float
+    TM_Turb <$ kw "turb" <*> float <*> float <*> float <*> float
     )
 
 depthFunc = (\_ v sa -> sa {saDepthFunc = v}) <$> kw "depthfunc" <*> (val D_Lequal "lequal" <|> val D_Equal "equal")
@@ -278,11 +280,11 @@ alphaFunc = pass <$> kw "alphafunc" <* (kw "gt0" <|> kw "lt128" <|> kw "ge128")
 --
 -- Q3MAP Specific Shader Keywords
 --
-cloudparams = pass <$> kw "cloudparms" <* skipRest
-lightning = pass <$> kw "lightning" <* skipRest
-light = pass <$> (kw "light" <|> kw "light1") <* skipRest
-sky = pass <$> kw "sky" <* skipRest
-foggen = pass <$> kw "foggen" <* skipRest
+cloudparams = pass <$> kw "cloudparms"
+lightning = pass <$> kw "lightning"
+light = pass <$> (kw "light" <|> kw "light1")
+sky = pass <$> kw "sky"
+foggen = pass <$> kw "foggen"
 
 tessSize = pass <$> kw "tesssize" <* float
 

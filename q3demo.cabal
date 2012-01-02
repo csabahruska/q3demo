@@ -6,7 +6,7 @@ Category:      Graphics, Game
 Description:   First Person Shooter Demo
 Author:        Csaba Hruska
 Maintainer:    csaba (dot) hruska (at) gmail (dot) com
-Copyright:     (c) 2011, Csaba Hruska
+Copyright:     (c) 2011-2012, Csaba Hruska
 License:       BSD3
 License-File:  LICENSE
 Stability:     experimental
@@ -15,16 +15,23 @@ Build-Type:    Simple
 Extra-Source-Files:
     Q3Demo/Data/Items.hs
     Q3Demo/Data/Material.hs
+    Q3Demo/Graphics/GLBackend.hs
+    Q3Demo/Graphics/Pipeline.hs
     Q3Demo/Graphics/Q3Patch.hs
     Q3Demo/Loader/BSP.hs
     Q3Demo/Loader/MD3.hs
     Q3Demo/Loader/ShaderParser.hs
+    Q3Demo/Loader/Zip.hs
+    Q3Demo/Main.hs
 
 Executable q3demo
-  HS-Source-Dirs: src
-  Main-IS:        Main.hs
-  Build-Depends:  base >= 4 && < 5, containers,
-                  binary, bytestring, bytestring-trie, data-binary-ieee754, vect, vector,
-                  OpenGLRaw, SDL, SDL-mixer, bitmap, stb-image >= 0.2
+  HS-Source-Dirs:   src
+  Main-IS:          SDLWrapper.hs
+  Build-Depends:    base >= 4 && < 5, containers, directory, filepath, mmap,
+                    attoparsec, binary, bytestring, bytestring-trie, data-binary-ieee754, digest, utf8-string, vect, vector, zlib,
+                    OpenGLRaw, SDL, SDL-mixer, bitmap, stb-image >= 0.2
 
-  GHC-Options:    -O2 -Wall -fforce-recomp -fno-warn-unused-do-bind -fno-warn-name-shadowing
+  GHC-Options:      -no-hs-main -O2 -Wall -fforce-recomp -fno-warn-unused-do-bind -fno-warn-name-shadowing
+  Extensions:       ForeignFunctionInterface
+  C-Sources:        cbits/wrapper.c
+  Include-Dirs:     /opt/local/include/SDL cbits
